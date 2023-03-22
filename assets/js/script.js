@@ -5,24 +5,24 @@ const select = document.querySelector(".select")
 const result = document.querySelector(".result")
 const button = document.querySelector("#button")
 const badgeChart = document.querySelector(".chart")
-let myChart = document.getElementById("myChart")
+let myChart;
 
 async function getCoinValues() {
 
     try{
     const response = await fetch("https://mindicador.cl/api/");
-    const arrayCoin = await res.json();
+    const arrayCoin = await response.json();
     return arrayCoin;
     }
 catch (e) {
-    alert("UPS algo anda mal")
+    alert("UPS, algo anda mal, actualiza o vuelve a intentarlo más tarde")
 }
   }
     
       
 
   async function conversor(multiplicador) {
-    const data = await getCurrency();
+    const data = await getCoinValues();
     let quantity = Number(input.value);
     let multiplication = (quantity * data[multiplicador].valor).toFixed(2);
     result.innerHTML = ` <h3>Resultado: $ ${multiplication} </h3>`;
@@ -53,38 +53,48 @@ catch (e) {
     }
   }
 
-  async function renderChart () {
+  async function renderChart (currency) {
 
-    const res = await getDailyCoin(currency);
+    const response = await fetch(`https://mindicador.cl/api/${currency}`);
+    const arrayCoin = await response.json();
     const config = {
-        type:"line",
-        divisa,
-
+        type: "line",
+        data: {
+          labels: arrayCoin.serie.map(s => s.fecha),
+          datasets: [{
+            label: 'Valores de ' + currency,
+            data: arrayCoin.serie.map(s => s.valor),
+            fill: false,
+            borderColor: 'rgb(177, 0, 109)',
+            tension: 0.1
+          }]
+        }
     };
     badgeChart.style.backgroundColor = "rgb(252, 226, 242)";
+    var ctx = document.getElementById('myChart').getContext('2d');
 
     if (myChart) {
-        myChart.destroy();
-
+        console.log(myChart)
+        myChart.destroy()
     }
 
-    const myChart = new Chart(badgeChart, config)
+    myChart = new Chart(ctx, config)
 
 }
 
 button.addEventListener("click", function () {
     if (input.value ==""){
-        alert ("Ingresa una cantidad válida.")
+        alert ("Ingresa el número de CLP que quieres consultar.")
     }
     
     if (input.value <0) {
-        alert ("debes ingresar un valor positivo.")
+        alert ("Intenta ingresando un valor positivo.")
     }
 
     let final = conversor (
         select.options[select.selectedIndex].value
     );
 
-    renderChart (select.options[select.selectedIndex].value);
+    renderChart(select.options[select.selectedIndex].value);
 })
 
